@@ -37,7 +37,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3303;
 
   await app.listen(port);
   console.log(`🚀 NestJS Telegram Bot is running on port ${port}`);
