@@ -37,6 +37,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  // Expose the OpenAPI schema as JSON
+  app.getHttpAdapter().get('/api/docs-json', (req, res) => {
+    res.json(document);
+  });
+
   const port = process.env.PORT || 3303;
 
   await app.listen(port);
@@ -44,6 +49,9 @@ async function bootstrap() {
   console.log(`📱 Bot is ready to receive messages!`);
   console.log(
     `📚 Swagger documentation available at: http://localhost:${port}/api/docs`,
+  );
+  console.log(
+    `📋 OpenAPI schema (JSON) available at: http://localhost:${port}/api/docs-json`,
   );
 }
 

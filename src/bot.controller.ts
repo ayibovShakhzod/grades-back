@@ -92,7 +92,9 @@ export class BotController {
   async sendMessage(@Body() body: SendMessageDto) {
     try {
       const { chatId, message } = body;
-      await this.bot?.telegram?.sendMessage(chatId, message);
+      await this.bot?.telegram?.sendMessage(chatId, message, {
+        parse_mode: 'HTML',
+      });
       return { status: 'sent' };
     } catch (error) {
       console.log('🚀 ~ BotController ~ sendMessage ~ error:', error);
@@ -157,7 +159,9 @@ export class BotController {
     const startTime = Date.now();
     for (const chatId of chatIds) {
       try {
-        await this.bot?.telegram?.sendMessage(chatId, message);
+        await this.bot?.telegram?.sendMessage(chatId, message, {
+          parse_mode: 'HTML',
+        });
         sent++;
       } catch (error) {
         errors.push({ chatId, error: error?.message || error });
