@@ -1,15 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString, IsNotEmpty } from 'class-validator';
 
-export class SendMessageDto {
+
+export class SendMessageToManyDto {
   @ApiProperty({
-    description: 'Telegram chat ID to send the message to',
-    example: 123456789,
-    type: Number,
+    description: 'Array of Telegram chat IDs to send the message to',
+    example: [123456789, 987654321],
+    type: [Number],
   })
-  @IsNumber()
+  @IsNumber({}, { each: true })
   @IsNotEmpty()
-  chatId: number;
+  chatIds: number[];
 
   @ApiProperty({
     description: 'Message content to send',
@@ -33,5 +34,4 @@ export class SendMessageDto {
   })
   @IsString()
   videoUrl?: string;
-
 }

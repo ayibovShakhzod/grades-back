@@ -19,6 +19,7 @@ import {
   ApiInternalServerErrorResponse,
 } from '@nestjs/swagger';
 import { SendMessageDto } from './dto/send-message.dto';
+import { SendMessageToManyDto } from './dto/send-message-to-many.dto';
 
 @ApiTags('Telegram Bot')
 @Controller('bot')
@@ -91,10 +92,26 @@ export class BotController {
   })
   async sendMessage(@Body() body: SendMessageDto) {
     try {
-      const { chatId, message } = body;
-      await this.bot?.telegram?.sendMessage(chatId, message, {
-        parse_mode: 'HTML',
-      });
+      const { chatId, message, imageUrl, videoUrl } = body;
+
+      switch (true) {
+        case !!imageUrl:
+          await this.bot?.telegram?.sendPhoto(chatId, imageUrl, {
+            caption: message,
+            parse_mode: 'HTML',
+          });
+          break;
+        case !!videoUrl:
+          await this.bot?.telegram?.sendVideo(chatId, videoUrl, {
+            caption: message,
+            parse_mode: 'HTML',
+          });
+          break;
+        default:
+          await this.bot?.telegram?.sendMessage(chatId, message, {
+            parse_mode: 'HTML',
+          });
+      }
       return { status: 'sent' };
     } catch (error) {
       console.log('🚀 ~ BotController ~ sendMessage ~ error:', error);
@@ -109,23 +126,8 @@ export class BotController {
     description: 'Sends a message to multiple Telegram chat IDs using the bot',
   })
   @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        chatIds: {
-          type: 'array',
-          items: { type: 'number' },
-          description: 'Array of Telegram chat IDs',
-          example: [123456789, 987654321],
-        },
-        message: {
-          type: 'string',
-          description: 'Message content',
-          example: 'Hello, everyone!',
-        },
-      },
-      required: ['chatIds', 'message'],
-    },
+    type: SendMessageToManyDto,
+    description: 'Message data including chat IDs and message content',
   })
   @ApiResponse({
     status: 200,
@@ -151,7 +153,8 @@ export class BotController {
     description: 'Bot error or Telegram API error',
   })
   async sendMessageToMany(
-    @Body() body: { chatIds: number[]; message: string },
+    @Body()
+    body: SendMessageToManyDto,
   ) {
     const { chatIds, message } = body;
     const errors: { chatId: number; error: any }[] = [];
@@ -159,9 +162,24 @@ export class BotController {
     const startTime = Date.now();
     for (const chatId of chatIds) {
       try {
-        await this.bot?.telegram?.sendMessage(chatId, message, {
-          parse_mode: 'HTML',
-        });
+        switch (true) {
+          case !!body.imageUrl:
+            await this.bot?.telegram?.sendPhoto(chatId, body.imageUrl, {
+              caption: message,
+              parse_mode: 'HTML',
+            });
+            break;
+          case !!body.videoUrl:
+            await this.bot?.telegram?.sendVideo(chatId, body.videoUrl, {
+              caption: message,
+              parse_mode: 'HTML',
+            });
+            break;
+          default:
+            await this.bot?.telegram?.sendMessage(chatId, message, {
+              parse_mode: 'HTML',
+            });
+        }
         sent++;
       } catch (error) {
         errors.push({ chatId, error: error?.message || error });
