@@ -33,5 +33,4 @@ export class SendMessageDto {
   })
   @IsString()
   videoUrl?: string;
-
 }

@@ -8,6 +8,8 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { Context, Telegraf } from 'telegraf';
 import {
@@ -20,15 +22,19 @@ import {
 } from '@nestjs/swagger';
 import { SendMessageDto } from './dto/send-message.dto';
 import { SendMessageToManyDto } from './dto/send-message-to-many.dto';
+import { TokenAuthGuard } from './token-auth.guard';
+import axios from 'axios';
 
 @ApiTags('Telegram Bot')
 @Controller('bot')
+@UseGuards(TokenAuthGuard)
 export class BotController {
   constructor(
     @Inject('TELEGRAF_BOT') private readonly bot: Telegraf<Context>,
   ) {}
 
   @Post('send')
+  @UseGuards(TokenAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send message via Telegram bot',
@@ -120,6 +126,7 @@ export class BotController {
   }
 
   @Post('send-to-many')
+  @UseGuards(TokenAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Send message to multiple Telegram chats',
@@ -153,9 +160,12 @@ export class BotController {
     description: 'Bot error or Telegram API error',
   })
   async sendMessageToMany(
-    @Body()
-    body: SendMessageToManyDto,
+    @Req() req: Request,
+    @Body() body: SendMessageToManyDto,
   ) {
+    const token = req.headers['authorization'];
+    console.log('🚀 ~ BotController ~ sendMessageToMany ~ token:', token);
+
     const { chatIds, message } = body;
     const errors: { chatId: number; error: any }[] = [];
     let sent = 0;
@@ -187,6 +197,33 @@ export class BotController {
     }
     const endTime = Date.now();
     const durationMs = endTime - startTime;
+    console.log(
+      '🚀 ~ BotController ~ sendMessageToMany ~ durationMs:',
+      durationMs,
+    );
+
+    await axios
+      .post(
+        `${process.env.STRAPI_URL}/content-manager/collection-types/api::message.message/actions/publish`,
+        {
+          content: message,
+          failed: errors.length,
+          success: sent,
+          errors_reasons: errors,
+          failed_telegram_ids: errors.map((error) => error.chatId),
+          time_ms: durationMs,
+          assets_url: body.imageUrl || body.videoUrl || null,
+        },
+        {
+          headers: {
+            Authorization: token,
+          },
+        },
+      )
+      .catch((error) => {
+        console.error('🚀 ~ BotController ~ sendMessageToMany ~ error:', error);
+      });
+
     return {
       status: 'sent',
       sent,

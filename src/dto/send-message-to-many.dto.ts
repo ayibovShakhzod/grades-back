@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString, IsNotEmpty } from 'class-validator';
 
-
 export class SendMessageToManyDto {
   @ApiProperty({
     description: 'Array of Telegram chat IDs to send the message to',
