@@ -23,6 +23,7 @@ export class TokenAuthGuard implements CanActivate {
           },
         },
       );
+      console.log("🚀 ~ TokenAuthGuard ~ canActivate ~ response:", process.env.STRAPI_URL, response)
       if (response.status === 200 && response.data) {
         // Optionally attach user info to request
         request.user = response.data;
