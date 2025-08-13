@@ -22,7 +22,10 @@ export class TokenAuthGuard implements CanActivate {
             Authorization: token,
           },
         },
-      );
+      ).catch(error => {
+        console.error("🚀 ~ TokenAuthGuard ~ canActivate ~ error:", process.env.STRAPI_URL, error);
+        throw new UnauthorizedException('Token validation failed');
+      });
       console.log("🚀 ~ TokenAuthGuard ~ canActivate ~ response:", process.env.STRAPI_URL, response)
       if (response.status === 200 && response.data) {
         // Optionally attach user info to request
